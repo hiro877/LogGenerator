@@ -8,10 +8,9 @@ from logparser import Drain
 parser = argparse.ArgumentParser()
 ##### Dataset params
 parser.add_argument("--dataset", default="BGL", type=str)
-parser.add_argument(
-    "--data_dir", default="./datasets/BGL/", type=str)
-parser.add_argument(
-    "--log_file", default="BGL.log", type=str)
+parser.add_argument("--data_dir", default="./datasets/BGL/", type=str)
+parser.add_argument("--save_dir", default="./results/Android/", type=str)
+parser.add_argument("--log_file", default="BGL.log", type=str)
 parser.add_argument("--use_data_size", default=None, type=int)
 
 """" Analyze """
@@ -52,7 +51,7 @@ if __name__ == "__main__":
     #         sys.exit()
     # sys.exit()
 
-    log_analyzer = LogAnalyzer(params["dataset"], params["data_dir"], params["log_file"], params["use_data_size"], params["analyze_adfuller"])
+    log_analyzer = LogAnalyzer(params["dataset"], params["data_dir"], params["save_dir"], params["log_file"], params["use_data_size"], params["analyze_adfuller"])
     # print(log_analyzer.f())
     #
     # df_log = load_data(params["dataset"])
@@ -60,4 +59,5 @@ if __name__ == "__main__":
     # print(df_log[:3])
     # print(df_log["Timestamp"])
     log_analyzer.analyze()
-    log_analyzer.analyze_windowed()
+    log_analyzer.analyze_log_hist()
+    log_analyzer.analyze_windowed_hist()

@@ -33,9 +33,10 @@ from statistics import mean, pstdev, median_low, median_high
 import statsmodels.tsa.api as tsa
 import datetime
 class LogAnalyzer:
-    def __init__(self, dataset, input_dir, log_file, use_data_size, analyze_adfuller):
+    def __init__(self, dataset, input_dir, save_dir, log_file, use_data_size, analyze_adfuller):
         self.dataset_name = dataset
         self.input_dir = input_dir
+        self.save_dir = save_dir
         self.log_file = log_file
         self.dataset_path = os.path.join(self.input_dir, self.log_file)
         self.use_data_size = use_data_size
@@ -447,7 +448,23 @@ class LogAnalyzer:
                 # sys.exit()
         self.print_results()
 
-    def analyze_windowed(self):
+    def analyze_log_hist(self):
+        # print("- ヒストグラム -")
+        # print("=" * 20)
+        # print("=== Histgram ===")
+        # print("=" * 20)
+        # df = (self.parser.df_log["Content"] == "mVisiblity.getValue is false")
+        # print(df.sum())
+        # results = dict()
+        save_path = os.path.join(self.save_dir, self.log_file.split(".")[0])
+        os.makedirs(save_path, exist_ok=True)
+        save_path = os.path.join(save_path, self.log_file.split(".")[0]+".txt")
+        with open(save_path, mode='w') as f:
+            for log in self.log_types:
+                df = (self.parser.df_log["Content"] == log)
+                f.writelines(log + "博" + str(df.sum()) + "\n")
+
+    def analyze_windowed_hist(self):
         print("="*20)
         print("=== analyze_windowed ===")
         print("=" * 20)
@@ -462,8 +479,13 @@ class LogAnalyzer:
                 results[window] += 1
             else:
                 results[window] = 1
-        for key, value in results.items():
-            print("{}博{}".format(key, value))
+
+        save_path = os.path.join(self.save_dir, self.log_file.split(".")[0])
+        os.makedirs(save_path, exist_ok=True)
+        save_path = os.path.join(save_path, self.log_file.split(".")[0]+"_windowed.txt")
+        self.save_dict(save_path, results)
+        # for key, value in results.items():
+        #     print("{}博{}".format(key, value))
 
 
     def print_results(self):
@@ -479,16 +501,6 @@ class LogAnalyzer:
         print("log_num_all    : {}".format(self.log_num_all))
         print("- Anomaly Raw Log")
         print("anomaly_log_num_all : {}".format(self.anomaly_log_num_all))
-
-        print("- ヒストグラム -")
-        print("=" * 20)
-        print("=== Histgram ===")
-        print("=" * 20)
-        df = (self.parser.df_log["Content"] == "mVisiblity.getValue is false")
-        print(df.sum())
-        for log in self.log_types:
-            df = (self.parser.df_log["Content"] == log)
-            print("{}博{}".format(log, df.sum()))
 
         if self.analyze_adfuller:
             print("- ADF statistics -")
@@ -518,4 +530,8 @@ class LogAnalyzer:
     # def split_timestamp(self):
     #     if self.dataset == "BGL":
     #         continue
+
+    def save_dict(self, save_path, dict_):
+        with open(save_path, mode='w') as f:
+            f.writelines("\n".join(str(k) + "博" + str(v) for k, v in dict_.items()))
 
