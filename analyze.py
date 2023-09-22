@@ -13,6 +13,10 @@ parser.add_argument(
 parser.add_argument(
     "--log_file", default="BGL.log", type=str)
 parser.add_argument("--use_data_size", default=None, type=int)
+
+"""" Analyze """
+parser.add_argument("--analyze_adfuller", action='store_true')
+
 # parser.add_argument("--window_size", default=10, type=int)
 # parser.add_argument("--stride", default=1, type=int)
 # parser.add_argument("--data_pct", default=1.0, type=float)
@@ -48,7 +52,7 @@ if __name__ == "__main__":
     #         sys.exit()
     # sys.exit()
 
-    log_analyzer = LogAnalyzer(params["dataset"], params["data_dir"], params["log_file"], params["use_data_size"])
+    log_analyzer = LogAnalyzer(params["dataset"], params["data_dir"], params["log_file"], params["use_data_size"], params["analyze_adfuller"])
     # print(log_analyzer.f())
     #
     # df_log = load_data(params["dataset"])
@@ -56,3 +60,4 @@ if __name__ == "__main__":
     # print(df_log[:3])
     # print(df_log["Timestamp"])
     log_analyzer.analyze()
+    log_analyzer.analyze_windowed()

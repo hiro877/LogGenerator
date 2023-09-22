@@ -33,15 +33,20 @@ from statistics import mean, pstdev, median_low, median_high
 import statsmodels.tsa.api as tsa
 import datetime
 class LogAnalyzer:
-    def __init__(self, dataset, input_dir, log_file, use_data_size):
+    def __init__(self, dataset, input_dir, log_file, use_data_size, analyze_adfuller):
         self.dataset_name = dataset
         self.input_dir = input_dir
         self.log_file = log_file
         self.dataset_path = os.path.join(self.input_dir, self.log_file)
         self.use_data_size = use_data_size
+        self.analyze_adfuller = analyze_adfuller
 
         self.parser = None
         self.log2id = {}
+        # For windowed logs
+        self.all_ids = []
+        self.window_size = 10
+        self.sliding_size = 1
 
         # self.df_log = None
         self.make_parser()
@@ -255,6 +260,7 @@ class LogAnalyzer:
         # print("current_time:", current_time)
 
         self.log_num_all = self.parser.df_log.shape[0]
+
         for idx, line in self.parser.df_log.iterrows():
             # logID = line['LineId']
             # content = self.parser.preprocess(line['Content']).strip().split()
@@ -285,7 +291,7 @@ class LogAnalyzer:
         current_time = self.parser.df_log["Timestamp"][0]
         per1s= 0
         log_id = 0
-        border_time = 3600 #1hour
+        # border_time = 3600 #1hour
         # print("current_time:", current_time)
 
         self.log_num_all = self.parser.df_log.shape[0]
@@ -318,7 +324,8 @@ class LogAnalyzer:
                 self.binaries.append(0)
 
             per1s += 1
-            if timestamp - current_time > border_time:
+            # if timestamp - current_time > border_time:
+            if timestamp != current_time:
                 self.lognum_per1s.append(per1s)
                 per1s = 0
                 current_time=timestamp
@@ -440,6 +447,25 @@ class LogAnalyzer:
                 # sys.exit()
         self.print_results()
 
+    def analyze_windowed(self):
+        print("="*20)
+        print("=== analyze_windowed ===")
+        print("=" * 20)
+        windowed_logs = []
+        results = {}
+        for i in range(0, len(self.ids) - self.window_size + 1, self.sliding_size):
+            window = self.ids[i:i + self.window_size]
+            # print(window)
+            window = ', '.join(map(str, window))
+            windowed_logs.append(window)
+            if window in results:
+                results[window] += 1
+            else:
+                results[window] = 1
+        for key, value in results.items():
+            print("{}博{}".format(key, value))
+
+
     def print_results(self):
         print("="*20)
         print("Result of Analysing {}".format(self.dataset_name))
@@ -454,41 +480,40 @@ class LogAnalyzer:
         print("- Anomaly Raw Log")
         print("anomaly_log_num_all : {}".format(self.anomaly_log_num_all))
 
-        print("- ADF statistics -")
-        # print("ids: ")
-        # adf_rlt_pv = tsa.adfuller(self.ids)
-        # print(f'ADF statistics: {adf_rlt_pv[0]}')
-        # print(f'# of lags used: {adf_rlt_pv[2]}')
-        # print(f'Critical values: {adf_rlt_pv[4]}')
-        # print("ids: ")
-        # adf_rlt_pv = tsa.adfuller(self.binaries)
-        # print(f'ADF statistics: {adf_rlt_pv[0]}')
-        # print(f'# of lags used: {adf_rlt_pv[2]}')
-        # print(f'Critical values: {adf_rlt_pv[4]}')
-        # print(len(self.ids))
-        # print(len(self.binaries))
-        # sys.exit()
-        # print(self.ids)
-        for i in range(0, len(self.ids), 100000):
-            try:
-                print("- ADF statistics {} -".format(i))
-                print("ids: ")
-                adf_rlt_pv = tsa.adfuller(self.ids[i : i+100000])
-                print(f'ADF statistics: {adf_rlt_pv[0]}')
-                print(f'# of lags used: {adf_rlt_pv[2]}')
-                print(f'Critical values: {adf_rlt_pv[4]}')
-                if self.binaries:
-                    print("binaries: ")
-                    adf_rlt_pv = tsa.adfuller(self.binaries[i : i+100000])
+        print("- ヒストグラム -")
+        print("=" * 20)
+        print("=== Histgram ===")
+        print("=" * 20)
+        df = (self.parser.df_log["Content"] == "mVisiblity.getValue is false")
+        print(df.sum())
+        for log in self.log_types:
+            df = (self.parser.df_log["Content"] == log)
+            print("{}博{}".format(log, df.sum()))
+
+        if self.analyze_adfuller:
+            print("- ADF statistics -")
+            for i in range(0, len(self.ids), 100000):
+                try:
+                    print("- ADF statistics {} -".format(i))
+                    print("ids: ")
+                    adf_rlt_pv = tsa.adfuller(self.ids[i : i+100000])
                     print(f'ADF statistics: {adf_rlt_pv[0]}')
+                    print('p-value: {}'.format(adf_rlt_pv[1]))
                     print(f'# of lags used: {adf_rlt_pv[2]}')
                     print(f'Critical values: {adf_rlt_pv[4]}')
-                print("-"*20)
-            except ValueError as e:
-                print(e)
+                    if self.binaries:
+                        print("binaries: ")
+                        adf_rlt_pv = tsa.adfuller(self.binaries[i : i+100000])
+                        print(f'ADF statistics: {adf_rlt_pv[0]}')
+                        print('p-value: {}'.format(adf_rlt_pv[1]))
+                        print(f'# of lags used: {adf_rlt_pv[2]}')
+                        print(f'Critical values: {adf_rlt_pv[4]}')
+                    print("-"*20)
+                except ValueError as e:
+                    print(e)
 
-        print(len(self.ids))
-        print(len(self.binaries))
+            # print(len(self.ids))
+            # print(len(self.binaries))
 
     # def split_timestamp(self):
     #     if self.dataset == "BGL":
