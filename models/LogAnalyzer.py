@@ -33,10 +33,11 @@ from statistics import mean, pstdev, median_low, median_high
 import statsmodels.tsa.api as tsa
 import datetime
 class LogAnalyzer:
-    def __init__(self, dataset, input_dir, save_dir, log_file, use_data_size, analyze_adfuller):
+    def __init__(self, dataset, input_dir, save_dir, preprocessed_dir, log_file, use_data_size, analyze_adfuller):
         self.dataset_name = dataset
         self.input_dir = input_dir
         self.save_dir = save_dir
+        self.preprocessed_dir = preprocessed_dir
         self.log_file = log_file
         self.dataset_path = os.path.join(self.input_dir, self.log_file)
         self.use_data_size = use_data_size
@@ -155,7 +156,10 @@ class LogAnalyzer:
         self.parser.df_log.to_pickle(save_path)  # 圧縮無し
 
     def load_android_data(self):
-        save_path = os.path.join(self.input_dir, "preprocessed")
+        if self.preprocessed_dir:
+            save_path = os.path.join(self.preprocessed_dir, "preprocessed")
+        else:
+            save_path = os.path.join(self.input_dir, "preprocessed")
         print(save_path)
         os.makedirs(save_path, exist_ok=True)
         save_path = os.path.join(save_path, "pandas_"+self.log_file.split(".")[0]+".pkl")
@@ -459,10 +463,18 @@ class LogAnalyzer:
         save_path = os.path.join(self.save_dir, self.log_file.split(".")[0])
         os.makedirs(save_path, exist_ok=True)
         save_path = os.path.join(save_path, self.log_file.split(".")[0]+".txt")
-        with open(save_path, mode='w') as f:
-            for log in self.log_types:
-                df = (self.parser.df_log["Content"] == log)
-                f.writelines(log + "博" + str(df.sum()) + "\n")
+        results = {}
+        all_num = 0
+        for log in self.log_types:
+            df = (self.parser.df_log["Content"] == log)
+            results[log] = df.sum()
+            all_num += df.sum()
+        results = sorted(results.items(), key=lambda x: x[1], reverse=True)
+        self.save_hist(save_path, results, all_num)
+        # with open(save_path, mode='w') as f:
+        #     for log in self.log_types:
+        #         df = (self.parser.df_log["Content"] == log)
+        #         f.writelines(log + "博" + str(df.sum()) + "\n")
 
     def analyze_windowed_hist(self):
         print("="*20)
@@ -470,6 +482,7 @@ class LogAnalyzer:
         print("=" * 20)
         windowed_logs = []
         results = {}
+        all_num = 0
         for i in range(0, len(self.ids) - self.window_size + 1, self.sliding_size):
             window = self.ids[i:i + self.window_size]
             # print(window)
@@ -479,11 +492,13 @@ class LogAnalyzer:
                 results[window] += 1
             else:
                 results[window] = 1
+            all_num+=1
 
         save_path = os.path.join(self.save_dir, self.log_file.split(".")[0])
         os.makedirs(save_path, exist_ok=True)
         save_path = os.path.join(save_path, self.log_file.split(".")[0]+"_windowed.txt")
-        self.save_dict(save_path, results)
+        results = sorted(results.items(), key=lambda x: x[1], reverse=True)
+        self.save_hist(save_path, results, all_num)
         # for key, value in results.items():
         #     print("{}博{}".format(key, value))
 
@@ -531,7 +546,12 @@ class LogAnalyzer:
     #     if self.dataset == "BGL":
     #         continue
 
-    def save_dict(self, save_path, dict_):
+    def save_dict_hist(self, save_path, dict_, all_num):
         with open(save_path, mode='w') as f:
-            f.writelines("\n".join(str(k) + "博" + str(v) for k, v in dict_.items()))
+            f.writelines("\n".join(str(k) + " " + str(v)  + " " + str(v/all_num) for k, v in dict_.items()))
 
+    def save_hist(self, save_path, results, all_num):
+        with open(save_path, mode='w') as f:
+            f.writelines("all_num: {}\n".format(all_num))
+            for result in results:
+                f.writelines(result[0] + " " + str(result[1]) + " " + str(100*result[1]/all_num) + "[%]\n")

@@ -10,6 +10,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--dataset", default="BGL", type=str)
 parser.add_argument("--data_dir", default="./datasets/BGL/", type=str)
 parser.add_argument("--save_dir", default="./results/Android/", type=str)
+parser.add_argument("--preprocessed_dir", default=None, type=str)
 parser.add_argument("--log_file", default="BGL.log", type=str)
 parser.add_argument("--use_data_size", default=None, type=int)
 
@@ -51,7 +52,7 @@ if __name__ == "__main__":
     #         sys.exit()
     # sys.exit()
 
-    log_analyzer = LogAnalyzer(params["dataset"], params["data_dir"], params["save_dir"], params["log_file"], params["use_data_size"], params["analyze_adfuller"])
+    log_analyzer = LogAnalyzer(params["dataset"], params["data_dir"], params["save_dir"], params["preprocessed_dir"], params["log_file"], params["use_data_size"], params["analyze_adfuller"])
     # print(log_analyzer.f())
     #
     # df_log = load_data(params["dataset"])
