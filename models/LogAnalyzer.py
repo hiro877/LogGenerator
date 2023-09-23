@@ -23,6 +23,8 @@
 nkf -Lu foo.txt
 - 文字コード変換
 nkf -w --overwrite foo.tzt 
+- Split Data
+
 """
 
 import sys
@@ -33,7 +35,7 @@ from statistics import mean, pstdev, median_low, median_high
 import statsmodels.tsa.api as tsa
 import datetime
 class LogAnalyzer:
-    def __init__(self, dataset, input_dir, save_dir, preprocessed_dir, log_file, use_data_size, analyze_adfuller):
+    def __init__(self, dataset, input_dir, save_dir, preprocessed_dir, log_file, use_data_size, use_template, analyze_adfuller):
         self.dataset_name = dataset
         self.input_dir = input_dir
         self.save_dir = save_dir
@@ -41,9 +43,11 @@ class LogAnalyzer:
         self.log_file = log_file
         self.dataset_path = os.path.join(self.input_dir, self.log_file)
         self.use_data_size = use_data_size
+        self.use_template = use_template
         self.analyze_adfuller = analyze_adfuller
 
         self.parser = None
+        self.df_log = None
         self.log2id = {}
         # For windowed logs
         self.all_ids = []
@@ -111,34 +115,44 @@ class LogAnalyzer:
         self.parser = Drain.LogParser(log_format, indir=self.input_dir, outdir=output_dir, depth=depth, st=st, rex=regex)
         self.parser.logName = self.log_file
 
+        if(self.use_template):
+            if not os.path.isfile(self.parser.get_structed_psth()):
+                print("parsing file ...")
+                self.parser.parse(self.log_file)
+
     def load_data(self):
         print("Load Dataset {}".format(self.dataset_name))
-        if self.dataset_name == "BGL":
-            self.load_bgl_data()
-        if self.dataset_name == "Android":
-            self.load_android_data()
-        if self.dataset_name == "Thunderbird":
-            self.load_thunderbird_data()
-        else:
-            self.load_common_data()
+        # if self.dataset_name == "BGL":
+        #     self.load_bgl_data()
+        # if self.dataset_name == "Android":
+        #     self.load_android_data()
+        # if self.dataset_name == "Thunderbird":
+        #     self.load_thunderbird_data()
+        # else:
+        #     self.load_common_data()
+        self.load_common_data()
 
     def load_common_data(self):
-        save_path = os.path.join(self.input_dir, "preprocessed")
-        print(save_path)
-        os.makedirs(save_path, exist_ok=True)
-        save_path = os.path.join(save_path, "pandas_"+self.log_file.split(".")[0]+".pkl")
-        print(save_path)
-        if os.path.exists(save_path):
-            print("save pandas file")
-            self.parser.df_log = pd.read_pickle(save_path)  # 圧縮無し
-            return
-
-        if self.use_data_size:
-            self.parser.load_data_limited(self.use_data_size)
+        if self.use_template:
+            self.parser.df_log = pd.read_csv(self.parser.get_structed_psth(), engine="c", na_filter=False, memory_map=True)
         else:
-            self.parser.load_data()
-        # self.df_log = self.parser.df_log
-        self.parser.df_log.to_pickle(save_path)  # 圧縮無し
+            save_path = os.path.join(self.input_dir, "preprocessed")
+            # print(save_path)
+            os.makedirs(save_path, exist_ok=True)
+            save_path = os.path.join(save_path, "pandas_"+self.log_file.split(".")[0]+".pkl")
+            print("save preprocessed path: ", save_path)
+            if os.path.exists(save_path):
+                print("save pandas file")
+                self.parser.df_log = pd.read_pickle(save_path)  # 圧縮無し
+                return
+
+            if self.use_data_size:
+                self.parser.load_data_limited(self.use_data_size)
+            else:
+                self.parser.load_data()
+            # self.df_log = self.parser.df_log
+
+            self.parser.df_log.to_pickle(save_path)  # 圧縮無し
 
     def load_bgl_data(self):
         save_path = os.path.join(self.input_dir, "preprocessed")
@@ -169,9 +183,12 @@ class LogAnalyzer:
             self.parser.df_log = pd.read_pickle(save_path)  # 圧縮無し
             return
 
-        self.parser.load_data()
-        # self.df_log = self.parser.df_log
-        self.parser.df_log.to_pickle(save_path)  # 圧縮無し
+        if self.use_template:
+            self.df_log = pd.read_csv(os.path.join(self.input_dir, self.log_file), engine="c", na_filter=False, memory_map=True)
+        else:
+            self.parser.load_data()
+            # self.df_log = self.parser.df_log
+            self.parser.df_log.to_pickle(save_path)  # 圧縮無し
         # print(self.parser.df_log)
 
     def load_thunderbird_data(self):
@@ -219,7 +236,10 @@ class LogAnalyzer:
         for idx, line in self.parser.df_log.iterrows():
             # logID = line['LineId']
             # content = self.parser.preprocess(line['Content']).strip().split()
-            content = line['Content']
+            if self.use_template:
+                content = line['EventId']
+            else:
+                content = line['Content']
             timestamp = line["Timestamp"]
             component = line['Component']
             label = line['Label']
@@ -228,11 +248,11 @@ class LogAnalyzer:
 
             self.log_types.add(content)
             self.log_components.add(component)
-            if component in self.log2id:
-                self.ids.append(self.log2id[component])
+            if content in self.log2id:
+                self.ids.append(self.log2id[content])
             else:
                 self.ids.append(log_id)
-                self.log2id[component] = log_id
+                self.log2id[content] = log_id
                 log_id += 1
 
 
@@ -269,7 +289,10 @@ class LogAnalyzer:
         for idx, line in self.parser.df_log.iterrows():
             # logID = line['LineId']
             # content = self.parser.preprocess(line['Content']).strip().split()
-            content = line['Content']
+            if self.use_template:
+                content = line['EventId']
+            else:
+                content = line['Content']
             time = datetime.datetime.strptime(line["Time"], s_format)
             component = line['Component']
             # print(line['Content'])
@@ -277,11 +300,11 @@ class LogAnalyzer:
 
             self.log_types.add(content)
             self.log_components.add(component)
-            if component in self.log2id:
-                self.ids.append(self.log2id[component])
+            if content in self.log2id:
+                self.ids.append(self.log2id[content])
             else:
                 self.ids.append(log_id)
-                self.log2id[component] = log_id
+                self.log2id[content] = log_id
                 log_id += 1
 
             per1s += 1
@@ -303,7 +326,10 @@ class LogAnalyzer:
         for idx, line in self.parser.df_log.iterrows():
             # logID = line['LineId']
             # content = self.parser.preprocess(line['Content']).strip().split()
-            content = line['Content']
+            if self.use_template:
+                content = line['EventId']
+            else:
+                content = line['Content']
             timestamp = line["Timestamp"]
             component = line['Component']
             label = line['Label']
@@ -312,11 +338,11 @@ class LogAnalyzer:
 
             self.log_types.add(content)
             self.log_components.add(component)
-            if component in self.log2id:
-                self.ids.append(self.log2id[component])
+            if content in self.log2id:
+                self.ids.append(self.log2id[content])
             else:
                 self.ids.append(log_id)
-                self.log2id[component] = log_id
+                self.log2id[content] = log_id
                 log_id += 1
 
 
@@ -351,7 +377,10 @@ class LogAnalyzer:
         for idx, line in self.parser.df_log.iterrows():
             # logID = line['LineId']
             # content = self.parser.preprocess(line['Content']).strip().split()
-            content = line['Content']
+            if self.use_template:
+                content = line['EventId']
+            else:
+                content = line['Content']
             time = datetime.datetime.strptime(line["Time"], s_format)
             component = line['Component']
             # print(line['Content'])
@@ -359,11 +388,11 @@ class LogAnalyzer:
 
             self.log_types.add(content)
             self.log_components.add(component)
-            if component in self.log2id:
-                self.ids.append(self.log2id[component])
+            if content in self.log2id:
+                self.ids.append(self.log2id[content])
             else:
                 self.ids.append(log_id)
-                self.log2id[component] = log_id
+                self.log2id[content] = log_id
                 log_id += 1
 
             per1s += 1
@@ -388,7 +417,10 @@ class LogAnalyzer:
         for idx, line in self.parser.df_log.iterrows():
             # logID = line['LineId']
             # content = self.parser.preprocess(line['Content']).strip().split()
-            content = line['Content']
+            if self.use_template:
+                content = line['EventId']
+            else:
+                content = line['Content']
             # print(line["Time"])
             try:
                 time = datetime.datetime.strptime(line["Time"], s_format)
@@ -400,11 +432,11 @@ class LogAnalyzer:
 
             self.log_types.add(content)
             self.log_components.add(component)
-            if component in self.log2id:
-                self.ids.append(self.log2id[component])
+            if content in self.log2id:
+                self.ids.append(self.log2id[content])
             else:
                 self.ids.append(log_id)
-                self.log2id[component] = log_id
+                self.log2id[content] = log_id
                 log_id += 1
 
             per1s += 1
@@ -429,7 +461,10 @@ class LogAnalyzer:
         for idx, line in self.parser.df_log.iterrows():
             # logID = line['LineId']
             # content = self.parser.preprocess(line['Content']).strip().split()
-            content = line['Content']
+            if self.use_template:
+                content = line['EventId']
+            else:
+                content = line['Content']
             time = datetime.datetime.strptime(line["Time"], s_format)
             component = line['Component']
             # print(line['Content'])
@@ -437,11 +472,11 @@ class LogAnalyzer:
 
             self.log_types.add(content)
             self.log_components.add(component)
-            if component in self.log2id:
-                self.ids.append(self.log2id[component])
+            if content in self.log2id:
+                self.ids.append(self.log2id[content])
             else:
                 self.ids.append(log_id)
-                self.log2id[component] = log_id
+                self.log2id[content] = log_id
                 log_id += 1
 
             per1s += 1
@@ -462,11 +497,17 @@ class LogAnalyzer:
         # results = dict()
         save_path = os.path.join(self.save_dir, self.log_file.split(".")[0])
         os.makedirs(save_path, exist_ok=True)
-        save_path = os.path.join(save_path, self.log_file.split(".")[0]+".txt")
+        if self.use_template:
+            save_path = os.path.join(save_path, self.log_file.split(".")[0] + "_structured.txt")
+        else:
+            save_path = os.path.join(save_path, self.log_file.split(".")[0]+".txt")
         results = {}
         all_num = 0
         for log in self.log_types:
-            df = (self.parser.df_log["Content"] == log)
+            if self.use_template:
+                df = (self.parser.df_log["EventId"] == log)
+            else:
+                df = (self.parser.df_log["Content"] == log)
             results[log] = df.sum()
             all_num += df.sum()
         results = sorted(results.items(), key=lambda x: x[1], reverse=True)
@@ -496,7 +537,10 @@ class LogAnalyzer:
 
         save_path = os.path.join(self.save_dir, self.log_file.split(".")[0])
         os.makedirs(save_path, exist_ok=True)
-        save_path = os.path.join(save_path, self.log_file.split(".")[0]+"_windowed.txt")
+        if self.use_template:
+            save_path = os.path.join(save_path, self.log_file.split(".")[0] + "_windowed_structured.txt")
+        else:
+            save_path = os.path.join(save_path, self.log_file.split(".")[0]+"_windowed.txt")
         results = sorted(results.items(), key=lambda x: x[1], reverse=True)
         self.save_hist(save_path, results, all_num)
         # for key, value in results.items():

@@ -4,13 +4,13 @@ Author      : LogPAI team
 License     : MIT
 """
 
-import re
+# import re
 import os
 import numpy as np
 import pandas as pd
 import hashlib
 from datetime import datetime
-
+import regex as re
 
 class Logcluster:
     def __init__(self, logTemplate='', logIDL=None):
@@ -224,6 +224,8 @@ class LogParser:
         df_event['Occurrences'] = df_event['EventTemplate'].map(occ_dict)
         df_event.to_csv(os.path.join(self.savePath, self.logName + '_templates.csv'), index=False, columns=["EventId", "EventTemplate", "Occurrences"])
 
+    def get_structed_psth(self):
+        return os.path.join(self.savePath, self.logName + '_structured.csv')
 
     def printTree(self, node, dep):
         pStr = ''   
