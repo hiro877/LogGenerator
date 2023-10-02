@@ -78,12 +78,14 @@ if __name__ == "__main__":
 
     file_names = [".txt", "_structured.txt", "_windowed.txt", "_windowed_structured.txt"]
     for file_name in file_names:
-        prefix=params["data_dir"].split("/")[-1]
-        print(prefix)
-        # load_data = load_analyzed_file(params, params["dataset"]+file_name)
-        load_data = load_analyzed_file(params, prefix + file_name)
+        # prefix=params["data_dir"].split("/")[-1]
+        # print(prefix)
+        load_data = load_analyzed_file(params, params["dataset"]+file_name)
+        # load_data = load_analyzed_file(params, prefix + file_name)
         investigate_hist(load_data, params["dataset"]+file_name)
         # investigate_hist(load_data, prefix + file_name)
+
+
     # path = "/work2/huchida/PSD_DC2/LogGenerator/datasets/Thunderbird/Thunderbird.log"
     # with open(path, encoding="UTF-8") as f:
     #     for line in f.readlines():
