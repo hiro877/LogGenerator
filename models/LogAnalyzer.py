@@ -34,6 +34,8 @@ import pandas as pd
 from statistics import mean, pstdev, median_low, median_high
 import statsmodels.tsa.api as tsa
 import datetime
+from scipy.stats import kurtosis
+
 class LogAnalyzer:
     def __init__(self, dataset, input_dir, save_dir, preprocessed_dir, log_file, use_data_size, use_template, analyze_adfuller):
         self.dataset_name = dataset
@@ -73,6 +75,7 @@ class LogAnalyzer:
         # ていじょうせい
         self.ids = []
         self.binaries = []
+        self.freqensies = []
 
 
     def f(self):
@@ -489,9 +492,9 @@ class LogAnalyzer:
 
     def analyze_log_hist(self):
         # print("- ヒストグラム -")
-        # print("=" * 20)
-        # print("=== Histgram ===")
-        # print("=" * 20)
+        print("=" * 20)
+        print("=== analyze_log_hist ===")
+        print("=" * 20)
         # df = (self.parser.df_log["Content"] == "mVisiblity.getValue is false")
         # print(df.sum())
         # results = dict()
@@ -512,6 +515,9 @@ class LogAnalyzer:
             all_num += df.sum()
         results = sorted(results.items(), key=lambda x: x[1], reverse=True)
         self.save_hist(save_path, results, all_num)
+        results = [i[1] for i in results]
+        # print((results))
+        self.analyze_kurtosis_hist(results)
         # with open(save_path, mode='w') as f:
         #     for log in self.log_types:
         #         df = (self.parser.df_log["Content"] == log)
@@ -543,7 +549,9 @@ class LogAnalyzer:
             save_path = os.path.join(save_path, self.log_file.split(".")[0]+"_windowed.txt")
         results = sorted(results.items(), key=lambda x: x[1], reverse=True)
         self.save_hist(save_path, results, all_num)
-        # for key, value in results.items():
+        results = [i[1] for i in results]
+        # print((results))
+        self.analyze_kurtosis_hist(results)        # for key, value in results.items():
         #     print("{}博{}".format(key, value))
 
 
@@ -562,7 +570,7 @@ class LogAnalyzer:
         print("anomaly_log_num_all : {}".format(self.anomaly_log_num_all))
 
         if self.analyze_adfuller:
-            print("- ADF statistics -")
+            # print("- ADF statistics -")
             for i in range(0, len(self.ids), 100000):
                 try:
                     print("- ADF statistics {} -".format(i))
@@ -572,14 +580,27 @@ class LogAnalyzer:
                     print('p-value: {}'.format(adf_rlt_pv[1]))
                     print(f'# of lags used: {adf_rlt_pv[2]}')
                     print(f'Critical values: {adf_rlt_pv[4]}')
-                    if self.binaries:
-                        print("binaries: ")
-                        adf_rlt_pv = tsa.adfuller(self.binaries[i : i+100000])
-                        print(f'ADF statistics: {adf_rlt_pv[0]}')
-                        print('p-value: {}'.format(adf_rlt_pv[1]))
-                        print(f'# of lags used: {adf_rlt_pv[2]}')
-                        print(f'Critical values: {adf_rlt_pv[4]}')
+                    # if self.binaries:
+                    #     print("binaries: ")
+                    #     adf_rlt_pv = tsa.adfuller(self.binaries[i : i+100000])
+                    #     print(f'ADF statistics: {adf_rlt_pv[0]}')
+                    #     print('p-value: {}'.format(adf_rlt_pv[1]))
+                    #     print(f'# of lags used: {adf_rlt_pv[2]}')
+                    #     print(f'Critical values: {adf_rlt_pv[4]}')
                     print("-"*20)
+                except ValueError as e:
+                    print(e)
+            print("="*20)
+            for i in range(0, len(self.lognum_per1s), 100000):
+                try:
+                    print("- ADF statistics lognum_per1s {} -".format(i))
+                    print("ids: ")
+                    adf_rlt_pv = tsa.adfuller(self.lognum_per1s[i : i+100000])
+                    print(f'ADF statistics: {adf_rlt_pv[0]}')
+                    print('p-value: {}'.format(adf_rlt_pv[1]))
+                    print(f'# of lags used: {adf_rlt_pv[2]}')
+                    print(f'Critical values: {adf_rlt_pv[4]}')
+                    print("-" * 20)
                 except ValueError as e:
                     print(e)
 
@@ -599,3 +620,15 @@ class LogAnalyzer:
             f.writelines("all_num: {}\n".format(all_num))
             for result in results:
                 f.writelines(result[0] + " " + str(result[1]) + " " + str(100*result[1]/all_num) + "[%]\n")
+
+
+    def analyze_kurtosis_hist(self, hist_right):
+        hist_left = hist_right[::-1]
+        # print(hist_left)
+        # print(hist_right)
+        histogram = hist_left + hist_right
+        # print("="*20)
+        print("- Analysing Kurtosis of Histogram -")
+        print("Kurtosis = {}".format(kurtosis(histogram)))
+        print("-" * 20)
+        # kurtosis = np.kurtosis(histogram)

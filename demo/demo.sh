@@ -20,6 +20,8 @@ python analyze.py --dataset Windows --data_dir ./datasets/Windows --log_file Win
 python analyze.py --dataset Android --data_dir ./datasets/Android/Android_v1 --log_file Android.log
 python analyze.py --dataset Android --data_dir ./datasets/Android/Android_v1 --log_file Android.log > Android_v1_results_widowed.txt
 python analyze.py --dataset Android --data_dir ./datasets/Android/Android_v1 --log_file Android.log --use_template
+python analyze.py --dataset Android --data_dir ./datasets/Android/Android_v1 --log_file Android.log --use_template
+
 
 # BGL
 python analyze.py
@@ -40,5 +42,6 @@ python investigate_analyzed_file.py --dataset Windows --data_dir ./results/Andro
 python investigate_analyzed_file.py --dataset Android --data_dir ./results/Android/Android
 
 python investigate_analyzed_file.py --dataset BGL --data_dir ./results/Android/BGL
+python investigate_analyzed_file.py --dataset Thunderbird --data_dir ./results/Android/Thunderbird_5000000
 #python analyze.py
 #python analyze.py

@@ -2,6 +2,7 @@ import argparse
 import sys
 import os
 from statistics import mean, pstdev, median_low, median_high
+from scipy.stats import kurtosis
 
 
 parser = argparse.ArgumentParser()
@@ -54,16 +55,35 @@ def investigate_hist(load_data, file_name):
     # print("log_types      : {}".format(len(self.log_types)))
     # print("log_components : {}".format(len(self.log_components)))
     print("all_num    : {}".format((all_num)))
-    print("For Copy   : {} {} {} {} {} {} {}".format(mean(results), pstdev(results), median_low(results),
-                                                    median_high(results), max(results), min(results), all_num))
+    ks = analyze_kurtosis_hist(results)
+    print("Kurtosis : {}".format(ks))
+    print("-" * 20)
+    print("For Copy   : {} {} {} {} {} {} {} {}".format(mean(results), pstdev(results), median_low(results),
+                                                    median_high(results), max(results), min(results), all_num, ks))
+
+def analyze_kurtosis_hist(hist_right):
+    hist_left = hist_right[::-1]
+    # print(hist_left)
+    # print(hist_right)
+    histogram = hist_left + hist_right
+    # print("="*20)
+    # print("- Analysing Kurtosis of Histogram -")
+    # print("Kurtosis = {}".format(kurtosis(histogram)))
+    # print("-" * 20)
+    # kurtosis = np.kurtosis(histogram)
+    return kurtosis(histogram)
 
 if __name__ == "__main__":
     params = vars(parser.parse_args())
 
     file_names = [".txt", "_structured.txt", "_windowed.txt", "_windowed_structured.txt"]
     for file_name in file_names:
-        load_data = load_analyzed_file(params, params["dataset"]+file_name)
+        prefix=params["data_dir"].split("/")[-1]
+        print(prefix)
+        # load_data = load_analyzed_file(params, params["dataset"]+file_name)
+        load_data = load_analyzed_file(params, prefix + file_name)
         investigate_hist(load_data, params["dataset"]+file_name)
+        # investigate_hist(load_data, prefix + file_name)
     # path = "/work2/huchida/PSD_DC2/LogGenerator/datasets/Thunderbird/Thunderbird.log"
     # with open(path, encoding="UTF-8") as f:
     #     for line in f.readlines():
