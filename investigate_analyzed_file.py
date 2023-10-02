@@ -84,9 +84,10 @@ def analyze_kurtosis_hist(hist_right):
 
 def analyze_indicator_of_dispersion(data):
     # ジニ係数
-    data_sorted = np.sort(data)
+    sorted_data = np.sort(data)
     n = len(data)
-    gini_coeff = (np.sum((2 * np.arange(1, n + 1) - n - 1) * data_sorted)) / (n * np.mean(data))
+    # gini_coeff = (np.sum((2 * np.arange(1, n + 1) - n - 1) * data_sorted)) / (n * np.mean(data))
+    gini_coeff = 2 * np.sum((np.arange(1, n + 1) - 1) * sorted_data) / (n * np.sum(sorted_data)) - (n + 1) / n
 
     # エントロピー
     freqs = pd.Series(data).value_counts(normalize=True)
