@@ -1,0 +1,4 @@
+pandas
+scipy
+statsmodels
+regex==2022.3.2
