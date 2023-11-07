@@ -86,8 +86,22 @@ def analyze_indicator_of_dispersion(data):
     # ジニ係数
     sorted_data = np.sort(data)
     n = len(data)
+    # print("gni_coeff : n={}".format(n))
+    # print(np.sum(sorted_data))
+    # print(sorted_data)
     # gini_coeff = (np.sum((2 * np.arange(1, n + 1) - n - 1) * data_sorted)) / (n * np.mean(data))
-    gini_coeff = 2 * np.sum((np.arange(1, n + 1) - 1) * sorted_data) / (n * np.sum(sorted_data)) - (n + 1) / n
+    ### https://en.wikipedia.org/wiki/Gini_coefficient (Alternative ecpressions simplified)
+    # gini_coeff = 2 * np.sum((np.arange(1, n + 1) - 1) * sorted_data) / (n * np.sum(sorted_data)) - (n + 1) / n
+    gini_coeff = 2 * np.sum((np.arange(1, n + 1)) * sorted_data) / (n * np.sum(sorted_data)) - (n + 1) / n
+
+    # data.sort()
+    # n = len(data)
+    # nume = 0
+    # for i in range(n):
+    #     nume = nume + (i + 1) * data[i]
+    #
+    # deno = n * sum(data)
+    # gini_coeff = ((2 * nume) / deno - (n + 1) / (n)) * (n / (n - 1))
 
     # エントロピー
     freqs = pd.Series(data).value_counts(normalize=True)
@@ -105,12 +119,10 @@ if __name__ == "__main__":
 
     file_names = [".txt", "_structured.txt", "_windowed.txt", "_windowed_structured.txt"]
     for file_name in file_names:
-        # prefix=params["data_dir"].split("/")[-1]
-        # print(prefix)
+
         load_data = load_analyzed_file(params, params["dataset"]+file_name)
-        # load_data = load_analyzed_file(params, prefix + file_name)
+        # load_data = load_analyzed_file(params, "Thunderbird_5000000" + file_name)
         investigate_hist(load_data, params["dataset"]+file_name)
-        # investigate_hist(load_data, prefix + file_name)
 
 
     # path = "/work2/huchida/PSD_DC2/LogGenerator/datasets/Thunderbird/Thunderbird.log"

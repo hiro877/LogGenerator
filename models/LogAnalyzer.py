@@ -118,6 +118,8 @@ class LogAnalyzer:
         self.parser = Drain.LogParser(log_format, indir=self.input_dir, outdir=output_dir, depth=depth, st=st, rex=regex)
         self.parser.logName = self.log_file
 
+        self.parser.parse(self.log_file)
+        sys.exit()
         if(self.use_template):
             if not os.path.isfile(self.parser.get_structed_psth()):
                 print("parsing file ...")
