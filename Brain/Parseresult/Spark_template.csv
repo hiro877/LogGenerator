@@ -1,0 +1,32 @@
+Registered signal handlers for [TERM, HUP, INT]  1
+Successfully started service 'sparkExecutorActorSystem' on port <*>  1
+Successfully started service <*> on port <*>  1
+Starting executor ID <*> on host mesos-slave-07  1
+Reading broadcast variable <*> took <*> ms  37
+File Output Committer Algorithm version is <*>  30
+Changing view acls to: yarn, curi  2
+Changing modify acls to: yarn, curi  2
+MemoryStore started with capacity <*> <*>  1
+Connecting to driver: spark: <*> <*>  1
+Partition <*> not found, computing it  75
+Input split: hdfs: <*> 9000/pjhe/logs/2kSOSP.log: <*>  45
+<*> is deprecated. Instead, use <*>  5
+SecurityManager: authentication disabled; ui acls disabled; users with view permissions: Set(yarn, curi); users with modify permissions: Set(yarn, curi)  2
+Slf4jLogger started  1
+<*> Committed  30
+Starting remoting  1
+Registered BlockManager  1
+Remoting started; listening on addresses : [akka.tcp: //sparkExecutorActorSystem@mesos-slave-07: <*>  1
+Saved output of task <*> to hdfs: <*> <*>  30
+Created local directory at <*>  1
+Started reading broadcast variable <*>  37
+Successfully registered with driver  1
+Server created on <*>  1
+Trying to register BlockManager  1
+Got assigned task <*>  305
+Found block <*> locally  257
+Running task <*> in stage <*> (TID <*>  305
+Block <*> stored as bytes in memory (estimated size <*> <*> free <*> <*>  112
+Block <*> stored as values in memory (estimated size <*> <*> free <*> <*>  37
+Finished task <*> in stage <*> (TID <*> <*> bytes result sent to driver  300
+Times: total = <*> boot = <*> init = <*> finish = <*>  375
