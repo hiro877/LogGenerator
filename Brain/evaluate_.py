@@ -29,14 +29,14 @@ benchmark_settings = {
 #         'theshold': 2
 #         },
 #
-#     'Hadoop': {
-#         'log_file': 'Hadoop/Hadoop_2k.log',
-#         'log_format': '<Date> <Time> <Level> \[<Process>\] <Component>: <Content>',
-#         'regex': [r'(\d+\.){3}\d+'],
-#         'delimiter': [],
-#         'tag': 1,
-#         'theshold': 6
-#         },
+    # 'Hadoop': {
+    #     'log_file': 'Hadoop/Hadoop_2k.log',
+    #     'log_format': '<Date> <Time> <Level> \[<Process>\] <Component>: <Content>',
+    #     'regex': [r'(\d+\.){3}\d+'],
+    #     'delimiter': [],
+    #     'tag': 1,
+    #     'theshold': 6
+    #     },
 #
 #     'Spark': {
 #         'log_file': 'Spark/Spark_2k.log',
@@ -58,8 +58,10 @@ benchmark_settings = {
 
     'BGL': {
         'log_file': 'BGL/BGL_2k.log',
+        # 'log_file': 'BGL/BGL.log',
         'log_format': '<Label> <Timestamp> <Date> <Node> <Time> <NodeRepeat> <Type> <Component> <Level> <Content>',
         'regex': [r'core\.\d+'],
+        # 'regex': [],
         'delimiter': [],
         'theshold': 6
         },

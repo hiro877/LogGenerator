@@ -55,7 +55,7 @@ benchmark_settings = {
         },
 
     'BGL': {
-        'log_file': 'BGL/BGL_2k.log',
+        'log_file': 'BGL/BGL_2k-.log',
         'log_format': '<Label> <Timestamp> <Date> <Node> <Time> <NodeRepeat> <Type> <Component> <Level> <Content>',
         'regex': [r'core\.\d+'],
         'delimiter': [],

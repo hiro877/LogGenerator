@@ -159,6 +159,13 @@ def tuple_generate(group_len,tuple_vector,frequency_vector):
                                     to their frequencies.
 
     '''
+    """
+    単語の組み合わせを生成する
+     出力：
+         sorted_tuple_vector: tuple_vector 内の各タプルは頻度に従ってソートされます。
+         word_combinations: ログ内の同じ頻度の単語が単語の組み合わせとしてグループ化され、頻度に従って降順に並べられます。
+         word_combinations_reverse: ログ内の単語の組み合わせは、頻度に従って昇順に並べられます。
+    """
     isDebug = False
     sorted_tuple_vector = {}
     word_combinations = {}
@@ -233,30 +240,48 @@ class tupletree:
         return root_set_detail_ID,root_set,root_set_detail
 
     def up_split(self,root_set_detail,root_set):
+        isDebug = True
+        if(isDebug): print("root_set: ", root_set)
         for key in root_set.keys():
+            if(isDebug): print("key: ", key)
             tree_node=root_set[key]
             father_count = []
+            if(isDebug): print("tree_node: ", tree_node)
             for node in tree_node:
+                if(isDebug): print("node: ", node)
                 pos = node.index(key)
+                if(isDebug): print("pos: ", pos)
                 for i in range(pos):
                     father_count.append(node[i])
+            # sys.exit()
             father_set=set(father_count)
+            if(isDebug): print("father_set: ", father_set)
             for father in father_set:
+                if(isDebug): print("father: ", father, key[0])
                 if father_count.count(father)==key[0]:
+                    if(isDebug): print("continue")
                     continue
                 else:
                     for i in range(len(root_set_detail[key])):
+                        if(isDebug): print("i: ", i, len(root_set_detail[key][i]))
                         for k in range(len(root_set_detail[key][i])):
-                                if father[0] == root_set_detail[key][i][k]:
-                                    print(root_set_detail[key][i][k])
-                                    root_set_detail[key][i][k]=(root_set_detail[key][i][k][0],'<*>',root_set_detail[key][i][k][2])
-                                    print(root_set_detail[key][i][k])
-                                    sys.exit()
+                            if(isDebug): print("k: ", k, root_set_detail[key][i][k], father[0])
+                            # print(type(father[0]), type(root_set_detail[key][i][k]))
+                            print(father, root_set_detail[key][i][k])
+                            # sys.exit()
+                            if father[0] == root_set_detail[key][i][k]:  #Fix: hiro877
+                                if(isDebug): print("root_set_detail[key][i][k]: ", root_set_detail[key][i][k])
+                                root_set_detail[key][i][k]=(root_set_detail[key][i][k][0],'<*>',root_set_detail[key][i][k][2])
+                                if(isDebug): print("root_set_detail[key][i][k]: ", root_set_detail[key][i][k])
+                                # print("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+                                # sys.exit()
                     break
+        # if (isDebug): sys.exit()
         return root_set_detail
 
     def down_split(self,root_set_detail_ID,threshold, root_set_detail):
-        print("root_set_detail_ID: ", root_set_detail_ID)
+        isDebug = False
+        if(isDebug): print("root_set_detail_ID: ", root_set_detail_ID)
 
         for key in root_set_detail_ID.keys():
             thre = threshold
@@ -283,6 +308,7 @@ class tupletree:
                 next.remove('')
                 result = set(child[i])
                 freq = len(result)
+                # print("freq: ", freq, result)
                 if freq>=thre:
                         variable=variable.union(result)
                 v_flag+=1
@@ -292,18 +318,52 @@ class tupletree:
                 while j < len(root_set_detail_ID[key][i]):
                     if isinstance(root_set_detail_ID[key][i][j],tuple):
                         if root_set_detail_ID[key][i][j][1] in variable:
-                            print(root_set_detail_ID[key][i][j])
+                            # print(root_set_detail_ID[key][i][j])
                             root_set_detail_ID[key][i][j] = (
                             root_set_detail_ID[key][i][j][0], '<*>', root_set_detail_ID[key][i][j][2])
-                            print(root_set_detail_ID[key][i][j])
+                            # print(root_set_detail_ID[key][i][j])
+                            # print("bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb")
                             # sys.exit()
                     j += 1
                 i+=1
-        print("root_set_detail_ID: ", root_set_detail_ID)
-        # sys.exit()
+        if(isDebug): print("root_set_detail_ID: ", root_set_detail_ID)
+        # if(isDebug): sys.exit()
         return root_set_detail_ID
 
 def output_result(parse_result):
+    # print(parse_result[6])
+    isDebug = False
+    template_set={}
+    for key in parse_result.keys():
+        if(isDebug): print("key: ", key)
+        for pr in parse_result[key]:
+            if(isDebug): print("pr: ", pr)
+            sort = sorted(pr, key=lambda tup: tup[2])
+            if(isDebug): print("sort: ", sort)
+            i=1
+            template=[]
+            while i < len(sort):
+                this=sort[i][1]
+                if(isDebug): print("this: ", this)
+                if bool('<*>' in this):
+                    if(isDebug): print("bool('<*>' in this)")
+                    template.append('<*>')
+                    i+=1
+                    continue
+                if exclude_digits(this):
+                    if(isDebug): print("exclude_digits(this)")
+                    template.append('<*>')
+                    i += 1
+                    continue
+                template.append(sort[i][1])
+                i+=1
+            template=tuple(template)
+            template_set.setdefault(template,[]).append(pr[len(pr)-1][0])
+    if(isDebug): print(template_set)
+    # if(isDebug): sys.exit()
+    return template_set
+
+def output_result_extract_param(parse_result):
     # print(parse_result[6])
     template_set={}
     for key in parse_result.keys():
@@ -368,6 +428,9 @@ def parse(sentences,filter,dataset,threshold,delimiter,starttime,efficiency,df_i
         root_set_detail_ID = Tree.up_split(root_set_detail_ID, root_set)
         parse_result = Tree.down_split(root_set_detail_ID, threshold, root_set_detail)
         template_set.update(output_result(parse_result))
+        # output_result_extract_param(parse_result)
+    # print("template_set: ", template_set)
+    # sys.exit()
     '''
     ### code for root node selection evaluation.
     print(
@@ -395,6 +458,7 @@ def parse(sentences,filter,dataset,threshold,delimiter,starttime,efficiency,df_i
             EventID[i] ="E"+str(IDnumber)
         IDnumber+=1
         # print(template_[i])
+    print(template_)
     df_example['EventTemplate']=template_
     df_example['EventId'] =EventID
     return df_example,template_set
