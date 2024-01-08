@@ -66,7 +66,7 @@ class LogGenerator:
     def generate(self):
         os.makedirs(self.out_dir, exist_ok=True)
         if self.dataset_name == "BGL":
-            self.analyze_bgl()
+            self.generate_bgl()
         if self.dataset_name == "Android":
             self.generate_android()
         if self.dataset_name == "Thunderbird":
@@ -77,6 +77,98 @@ class LogGenerator:
             self.analyze_linux()
         if self.dataset_name == "Mac":
             self.analyze_mac()
+
+    def generate_bgl(self):
+        print("generate_bgl")
+        log_label = "-"
+        log_timestamp = "1111111111"
+        log_mode = "R02-M1-N0-C:J12-U11"
+        log_node_repeat = "R02-M1-N0-C:J12-U11"
+        log_type = "RAS"
+        log_component = "KERNEL"
+        log_level = "INFO"
+
+        s_format = '%Y.%M.%d'
+        log_date = datetime.datetime.strftime(self.init_time, s_format)
+        s_format = '%Y-%m-%d-%H.%M.%S.%f'
+        # log_time = datetime.datetime.strftime(self.init_time, s_format)
+        log_time = self.init_time
+        # log_pid, log_tid, log_level = ["1111", "1111", "D"]
+        # log_tid = "1111"
+        # log_component = "ComponentA"
+        # log_contents = "Contents"
+        ignore_index = []
+        contents_list = []
+
+        # histgram 0より大きい値があるIndexを抽出する
+        # not_zero_index = 0
+        # for i in range(len(self.histgram)):
+        #     if self.histgram[i] > 1:
+        #         not_zero_index = i
+        #         break
+        # print(not_zero_index, self.histgram)
+        # print(self.histgram[not_zero_index])
+
+        for i in range(len(self.int_pattern_contents)):
+            not_zero_index = self.get_not_zero_index(self.histgram)
+            contents = self.generate_contents()
+            self.int_pattern_contents[i] = contents
+
+            rnd = random.randint(not_zero_index, len(self.histgram)-1)
+            hist = self.histgram.pop(rnd)
+            result = self.inject_parameter("int", contents, hist)
+            contents_list = contents_list + result
+            # sys.exit()
+
+        # for i in range(len(self.str_pattern_contents)):
+        not_zero_index = self.get_not_zero_index(self.histgram)
+        contents= self.generate_contents()
+        rnd = random.randint(not_zero_index, len(self.histgram)-1)
+        hist = self.histgram.pop(rnd)
+        result = self.inject_parameter("string", contents, hist)
+        contents_list = contents_list + result
+        # sys.exit()
+
+
+        # range_len = self.log_types - len(self.int_pattern_contents) - len(self.str_pattern_contents)
+        for hist in self.histgram:
+            contents = [self.generate_contents()]
+            contents = contents * hist
+            print(contents)
+            contents_list = contents_list + contents
+
+        # contents = self.generate_contents()
+        # print(len(contents_list))
+        # print("{} {}  {}  {} {} {}: {}".format(log_date, log_time, log_pid, log_tid, log_level,
+        #                                       log_component, log_contents))
+        # sys.exit()
+
+        # print(contents_list)
+        random.shuffle(contents_list)
+        # print(contents_list)
+
+        now = datetime.datetime.now()
+        save_path = self.out_dir+'/log_bgl_' + now.strftime('%m%d_%H%M%S') + '.log'
+        log_num = 0
+        with open(save_path, mode='w') as f:
+            for log_contents in contents_list:
+                if log_num > self.per1s:
+                    log_num=0
+                    log_time = log_time + datetime.timedelta(seconds=1)
+
+                log_time_str = datetime.datetime.strftime(log_time, s_format)
+                if "error" in log_contents:
+                    f.writelines(
+                        "{} {} {} {} {} {} {} {} {} {}\n".format("STRERR", log_timestamp, log_date, log_mode, log_time_str,
+                                                               log_node_repeat
+                                                               , log_type, log_component, log_level, log_contents))
+                else:
+                    f.writelines("{} {} {} {} {} {} {} {} {} {}\n".format(log_label, log_timestamp, log_date, log_mode, log_time_str, log_node_repeat
+                                                                       ,log_type, log_component, log_level, log_contents))
+                log_num+=1
+            # for log in self.log_types:
+            #     df = (self.parser.df_log["Content"] == log)
+            #     f.writelines(log + "博" + str(df.sum()) + "\n")
 
     def generate_android(self):
         print("generate_android")
@@ -139,7 +231,7 @@ class LogGenerator:
         # print(contents_list)
 
         now = datetime.datetime.now()
-        save_path = self.out_dir+'/log_' + now.strftime('%m%d_%H%M%S') + '.txt'
+        save_path = self.out_dir+'/log_android_' + now.strftime('%m%d_%H%M%S') + '.log'
         log_num = 0
         with open(save_path, mode='w') as f:
             for log_contents in contents_list:

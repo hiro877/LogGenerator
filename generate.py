@@ -24,7 +24,7 @@ parser.add_argument("--string_len_max", default=10, type=int)
 parser.add_argument("--sentence_len_min", default=3, type=int)
 parser.add_argument("--sentence_len_max", default=6, type=int)
 
-parser.add_argument("--per1s", default=10, type=int)
+parser.add_argument("--per1s", default=15, type=int)
 parser.add_argument("--log_types", default=50, type=int)
 
 parser.add_argument("--hist_max", default=10, type=float)
@@ -49,6 +49,11 @@ def diif_ex():
     for line in differences:
         print(line)
     sys.exit()
+
+"""
+for andooid:
+python generate.py 
+"""
 
 if __name__ == "__main__":
     # import re

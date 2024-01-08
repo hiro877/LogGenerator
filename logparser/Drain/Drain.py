@@ -6,6 +6,8 @@ License     : MIT
 
 # import re
 import os
+import sys
+
 import numpy as np
 import pandas as pd
 import hashlib
@@ -262,12 +264,15 @@ class LogParser:
             logmessageL = self.preprocess(line['Content']).strip().split()
             # logmessageL = filter(lambda x: x != '', re.split('[\s=:,]', self.preprocess(line['Content'])))
             matchCluster = self.treeSearch(rootNode, logmessageL)
-
+            print(line['Content'])
+            print(logmessageL)
+            print(matchCluster)
             #Match no existing log cluster
             if matchCluster is None:
                 newCluster = Logcluster(logTemplate=logmessageL, logIDL=[logID])
                 logCluL.append(newCluster)
                 self.addSeqToPrefixTree(rootNode, newCluster)
+                print(newCluster)
 
             #Add the new log message to the existing cluster
             else:
@@ -276,6 +281,7 @@ class LogParser:
                 if ' '.join(newTemplate) != ' '.join(matchCluster.logTemplate): 
                     matchCluster.logTemplate = newTemplate
 
+            sys.exit()
             count += 1
             if count % 1000 == 0 or count == len(self.df_log):
                 print('Processed {0:.1f}% of log lines.'.format(count * 100.0 / len(self.df_log)))
@@ -298,7 +304,10 @@ class LogParser:
 
     def preprocess(self, line):
         for currentRex in self.rex:
+            print("currentRex: ", currentRex)
+            print("line: ", line)
             line = re.sub(currentRex, '<*>', line)
+            print("line: ", line)
         return line
 
     def log_to_dataframe(self, log_file, regex, headers, logformat):

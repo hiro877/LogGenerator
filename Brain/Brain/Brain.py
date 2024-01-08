@@ -4,6 +4,7 @@ from collections import Counter
 import os
 import pandas as pd
 import re
+import csv
 
 RED = "\033[31m"
 RESET = "\033[0m"
@@ -18,6 +19,10 @@ def get_frequecy_vector(sentences,filter,delimiter,dataset):
         frequency_vector: the word in the log will be converted into its frequency
 
     '''
+    """
+    - For Future task by hiro87
+     Save extracted param by using regex.
+    """
     isDebug = False
     group_len = {}
     set = {}
@@ -240,7 +245,7 @@ class tupletree:
         return root_set_detail_ID,root_set,root_set_detail
 
     def up_split(self,root_set_detail,root_set):
-        isDebug = True
+        isDebug = False
         if(isDebug): print("root_set: ", root_set)
         for key in root_set.keys():
             if(isDebug): print("key: ", key)
@@ -267,14 +272,15 @@ class tupletree:
                         for k in range(len(root_set_detail[key][i])):
                             if(isDebug): print("k: ", k, root_set_detail[key][i][k], father[0])
                             # print(type(father[0]), type(root_set_detail[key][i][k]))
-                            print(father, root_set_detail[key][i][k])
+                            # print(father, root_set_detail[key][i][k])
                             # sys.exit()
-                            if father[0] == root_set_detail[key][i][k]:  #Fix: hiro877
+                            if father[0] == root_set_detail[key][i][k]:
                                 if(isDebug): print("root_set_detail[key][i][k]: ", root_set_detail[key][i][k])
                                 root_set_detail[key][i][k]=(root_set_detail[key][i][k][0],'<*>',root_set_detail[key][i][k][2])
                                 if(isDebug): print("root_set_detail[key][i][k]: ", root_set_detail[key][i][k])
-                                # print("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
-                                # sys.exit()
+                                print("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+                                print("Please Check Code Here!!")
+                                sys.exit()
                     break
         # if (isDebug): sys.exit()
         return root_set_detail
@@ -282,6 +288,7 @@ class tupletree:
     def down_split(self,root_set_detail_ID,threshold, root_set_detail):
         isDebug = False
         if(isDebug): print("root_set_detail_ID: ", root_set_detail_ID)
+        down_split_variables = {}   #hiro877
 
         for key in root_set_detail_ID.keys():
             thre = threshold
@@ -308,7 +315,6 @@ class tupletree:
                 next.remove('')
                 result = set(child[i])
                 freq = len(result)
-                # print("freq: ", freq, result)
                 if freq>=thre:
                         variable=variable.union(result)
                 v_flag+=1
@@ -318,9 +324,24 @@ class tupletree:
                 while j < len(root_set_detail_ID[key][i]):
                     if isinstance(root_set_detail_ID[key][i][j],tuple):
                         if root_set_detail_ID[key][i][j][1] in variable:
-                            # print(root_set_detail_ID[key][i][j])
+                            """ extructing param by hiro877 """
+                            if not key in down_split_variables:
+                                down_split_variables[key] = {}
+                            key_index = str(root_set_detail_ID[key][i][j][2])
+                            if not key_index in down_split_variables[key]:
+                                # hiro877
+                                # down_split_variables[key][key_index] = []
+                                down_split_variables[key][key_index] = set()
+                            # down_split_variables[key][key_index].append(root_set_detail_ID[key][i][j][1])
+                            param_data = remove_specific_characters_from_back(root_set_detail_ID[key][i][j][1])
+                            down_split_variables[key][key_index].add(param_data)
+                            """ extructing param by hiro877 End"""
+
+                            # print(key, root_set_detail_ID[key][i][j])
                             root_set_detail_ID[key][i][j] = (
                             root_set_detail_ID[key][i][j][0], '<*>', root_set_detail_ID[key][i][j][2])
+                            # print(root_set_detail_ID)
+                            # # sys.exit()
                             # print(root_set_detail_ID[key][i][j])
                             # print("bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb")
                             # sys.exit()
@@ -328,17 +349,27 @@ class tupletree:
                 i+=1
         if(isDebug): print("root_set_detail_ID: ", root_set_detail_ID)
         # if(isDebug): sys.exit()
-        return root_set_detail_ID
+        # print(variable)
+        # print("="*20)
+        # print(down_split_variables)
+        # sys.exit()
+        return root_set_detail_ID, down_split_variables
 
 def output_result(parse_result):
     # print(parse_result[6])
     isDebug = False
     template_set={}
+    # print("=========")
+    # print(parse_result)
+    # sys.exit()
+
     for key in parse_result.keys():
         if(isDebug): print("key: ", key)
         for pr in parse_result[key]:
             if(isDebug): print("pr: ", pr)
             sort = sorted(pr, key=lambda tup: tup[2])
+            print(sort)
+            sys.exit()
             if(isDebug): print("sort: ", sort)
             i=1
             template=[]
@@ -363,27 +394,41 @@ def output_result(parse_result):
     # if(isDebug): sys.exit()
     return template_set
 
-def output_result_extract_param(parse_result):
-    # print(parse_result[6])
+def output_result_extract_param(parse_result, down_split_variables, variables_templates):
+    isDebug = False
     template_set={}
+    exclude_digits_variables = {}
+    exclude_digits_variables_output = {}
     for key in parse_result.keys():
-        print("key: ", key)
+        if(isDebug): print("key: ", key)
         for pr in parse_result[key]:
-            print("pr: ", pr)
+            if(isDebug): print("pr: ", pr)
             sort = sorted(pr, key=lambda tup: tup[2])
-            print("sort: ", sort)
+            if(isDebug): print("sort: ", sort)
             i=1
             template=[]
             while i < len(sort):
                 this=sort[i][1]
-                print("this: ", this)
+                if(isDebug): print("this: ", this)
                 if bool('<*>' in this):
-                    print("bool('<*>' in this)")
+                    if(isDebug): print("bool('<*>' in this)")
                     template.append('<*>')
                     i+=1
                     continue
                 if exclude_digits(this):
-                    print("exclude_digits(this)")
+                    if(isDebug): print("exclude_digits(this)")
+                    """ extructing param by hiro877 """
+                    if(isDebug): print("exclude_digits() is True. this={}".format(this))
+                    if not key in exclude_digits_variables:
+                        exclude_digits_variables[key] = {}
+                    key_index = str(i-1)
+                    if not key_index in exclude_digits_variables[key]:
+                        # hiro877
+                        # exclude_digits_variables[key][key_index] = []
+                        exclude_digits_variables[key][key_index] = set()
+                    # exclude_digits_variables[key][key_index].append(this)
+                    exclude_digits_variables[key][key_index].add(this)
+                    """ extructing param by hiro877 End"""
                     template.append('<*>')
                     i += 1
                     continue
@@ -391,20 +436,38 @@ def output_result_extract_param(parse_result):
                 i+=1
             template=tuple(template)
             template_set.setdefault(template,[]).append(pr[len(pr)-1][0])
-    print(template_set)
+
+        if key in down_split_variables:
+            # print("template: {}, down_split_variables: {}".format(template, down_split_variables[key]))
+            variables_templates[template] = down_split_variables[key]
+        if key in exclude_digits_variables:
+            # print("template: {}, exclude_digits_variables: {}".format(template, exclude_digits_variables[key]))
+            exclude_digits_variables_output[template] = exclude_digits_variables[key]
+
+    # print("=== output_result_extract_param() ===")
+    # print("down_split_variables; ", down_split_variables)
+    # print("exclude_digits_variables: ", exclude_digits_variables)
+    # print("exclude_digits_variables_output: ", exclude_digits_variables_output)
+    # print("="*20)
+    # print(variables_templates)
+    # print("=" * 20)
     # sys.exit()
-    return template_set
+    return template_set, variables_templates, exclude_digits_variables_output
 
 def parse(sentences,filter,dataset,threshold,delimiter,starttime,efficiency,df_input):
+    """
+    - Variables Construction
+    {"Key": {"Index Id": [v1, v2, ...], "IId2": [v1, v2, ...]}, "key2": {"": []}, ...}
+    For example:
+    {(6, 3): {'1': ['apple', 'orange', 'greap', 'banana', 'cherry', 'peach'], '3': ['error', 'null', 'false', 'true', 'zero', 'one']}}
+    """
     group_len, tuple_vector, frequency_vector = get_frequecy_vector(sentences, filter,delimiter,dataset)
-    # print(group_len)
-    # print(tuple_vector)
-    # print(frequency_vector[:10])
-    # sys.exit()
     sorted_tuple_vector, word_combinations, word_combinations_reverse= tuple_generate(group_len, tuple_vector, frequency_vector)
     df_example = df_input
     template_set = {}
+
     for key in group_len.keys():
+        # print("key, value: ", key, group_len[key])
         Tree = tupletree(sorted_tuple_vector[key], word_combinations[key], word_combinations_reverse[key], tuple_vector[key], group_len[key])
         root_set_detail_ID, root_set, root_set_detail = Tree.find_root(0)
         '''
@@ -426,11 +489,10 @@ def parse(sentences,filter,dataset,threshold,delimiter,starttime,efficiency,df_i
                 correct_choose+=1
         '''
         root_set_detail_ID = Tree.up_split(root_set_detail_ID, root_set)
-        parse_result = Tree.down_split(root_set_detail_ID, threshold, root_set_detail)
+        parse_result, down_split_variables = Tree.down_split(root_set_detail_ID, threshold, root_set_detail)
         template_set.update(output_result(parse_result))
-        # output_result_extract_param(parse_result)
-    # print("template_set: ", template_set)
-    # sys.exit()
+        # template_set.update(output_result_extract_param(parse_result, down_split_variables))
+
     '''
     ### code for root node selection evaluation.
     print(
@@ -448,8 +510,7 @@ def parse(sentences,filter,dataset,threshold,delimiter,starttime,efficiency,df_i
     template_=len(sentences)*[0]
     EventID=len(sentences)*[0]
     IDnumber=0
-    # print(template_set)
-    # sys.exit()
+
     for k1 in template_set.keys():
         group_accuracy = {''}
         group_accuracy.remove('')
@@ -457,8 +518,6 @@ def parse(sentences,filter,dataset,threshold,delimiter,starttime,efficiency,df_i
             template_[i]=' '.join(k1)
             EventID[i] ="E"+str(IDnumber)
         IDnumber+=1
-        # print(template_[i])
-    print(template_)
     df_example['EventTemplate']=template_
     df_example['EventId'] =EventID
     return df_example,template_set
@@ -478,12 +537,76 @@ def exclude_digits(string):
     '''
     exclude the digits-domain words from partial constant
     '''
+    # print(string)
     pattern = r'\d'
     digits = re.findall(pattern, string)
+    # print(digits)
     if len(digits)==0:
         return False
     return len(digits)/len(string) >= 0.3
 
+def analyze_dataset(target_name, sentences,filter,dataset,threshold,delimiter):
+    """
+        - Variables Construction
+        {"Key": {"Index Id": [v1, v2, ...], "IId2": [v1, v2, ...]}, "key2": {"": []}, ...}
+        For example:
+        {(6, 3): {'1': ['apple', 'orange', 'greap', 'banana', 'cherry', 'peach'], '3': ['error', 'null', 'false', 'true', 'zero', 'one']}}
+    """
+    group_len, tuple_vector, frequency_vector = get_frequecy_vector(sentences, filter, delimiter, dataset)
+    sorted_tuple_vector, word_combinations, word_combinations_reverse = tuple_generate(group_len, tuple_vector,
+                                                                                       frequency_vector)
+    template_set = {}
+    variables_templates = {}
+    for key in group_len.keys():
+        Tree = tupletree(sorted_tuple_vector[key], word_combinations[key], word_combinations_reverse[key],
+                         tuple_vector[key], group_len[key])
+        root_set_detail_ID, root_set, root_set_detail = Tree.find_root(0)
+
+        root_set_detail_ID = Tree.up_split(root_set_detail_ID, root_set)
+        parse_result, down_split_variables = Tree.down_split(root_set_detail_ID, threshold, root_set_detail)
+        template_result, variables_templates, exclude_digits_variables = output_result_extract_param(parse_result, down_split_variables, variables_templates)
+        template_set.update(template_result)
+
+    """
+    Save Result
+    """
+    os.makedirs("Results/Analized/", exist_ok=True)
+    now = datetime.datetime.now()
+    save_path = "Results/Analized/" + target_name+ "_" + now.strftime('%m%d_%H%M%S') + '.csv'
+    log_num = 0
+    header = ["Template", "Index", "Parameters"]
+    with open(save_path, mode='w') as f:
+        writer = csv.writer(f)
+        writer.writerow(header)
+        """ down_split() """
+        for key , values in variables_templates.items():
+            print(key, values)
+            for k, v in values.items():
+                l = [key, k]
+                l = l + list(v)
+                writer.writerow(l)
+
+        """ exclude_digits """
+        writer.writerow(header)
+        for key , values in exclude_digits_variables.items():
+            print(key, values)
+            for k, v in values.items():
+                l = [key, k]
+                l = l + list(v)
+                writer.writerow(l)
+
+def remove_specific_characters_from_back(input_str):
+    # 定義された文字を格納するリスト
+    characters_to_remove = [",", ")", "}", "]"]
+
+    # 文字列を逆順で探索し、指定された文字を削除
+    for char in reversed(input_str):
+        if char in characters_to_remove:
+            input_str = input_str[:-1]  # 最後の文字を削除
+        else:
+            break  # 最初の指定されていない文字で終了
+
+    return input_str
 
 class format_log:    # this part of code is from LogPai https://github.com/LogPai
 
@@ -545,5 +668,6 @@ class format_log:    # this part of code is from LogPai https://github.com/LogPa
     def load_data(self):
         headers, regex = self.generate_logformat_regex(self.log_format)
         self.df_log = self.log_to_dataframe(os.path.join(self.path, self.logName), regex, headers, self.log_format)
+
 
 

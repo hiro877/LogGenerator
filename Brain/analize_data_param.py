@@ -21,7 +21,8 @@ benchmark_settings = {
 #         'theshold': 3
 #     },
 #     'HDFS': {
-#         'log_file': 'HDFS/HDFS_2k.log',
+#         # 'log_file': 'HDFS/HDFS_2k.log',
+#         'log_file': 'HDFS/HDFS.log',
 #         'log_format': '<Date> <Time> <Pid> <Level> <Component>: <Content>',
 #         'regex': [r'blk_-?\d+', r'(\d+\.){3}\d+(:\d+)?'],
 #         'delimiter': [''],
@@ -56,16 +57,17 @@ benchmark_settings = {
 #         'theshold': 3
 #         },
 
-    'BGL': {
-        # 'log_file': 'BGL/BGL_2k.log',
-        # 'log_file': 'BGL/BGL.log',
-        'log_file': 'BGL/BGL_2k-.log',
-        'log_format': '<Label> <Timestamp> <Date> <Node> <Time> <NodeRepeat> <Type> <Component> <Level> <Content>',
-        'regex': [r'core\.\d+'],
-        # 'regex': [],
-        'delimiter': [],
-        'theshold': 6
-        },
+    # 'BGL': {
+    #     # 'log_file': 'BGL/BGL_2k.log',
+    #     # 'log_file': 'BGL/BGL.log',
+    #     'log_file': 'BGL/BGL_2k-.log',
+    #     'log_format': '<Label> <Timestamp> <Date> <Node> <Time> <NodeRepeat> <Type> <Component> <Level> <Content>',
+    #     # 'regex': [r'core\.\d+'],
+    #     'regex': [],
+    #     # 'regex': [],
+    #     'delimiter': [],
+    #     'theshold': 6
+    #     },
 
     # 'HPC': {
     #     'log_file': 'HPC/HPC_2k.log',
@@ -99,13 +101,15 @@ benchmark_settings = {
     #     'theshold': 4
     #     },
     #
-    # 'Android': {
-    #     'log_file': 'Android/Android_2k.log',
-    #     'log_format': '<Date> <Time>  <Pid>  <Tid> <Level> <Component>: <Content>',
-    #     'regex': [r'(/[\w-]+)+', r'([\w-]+\.){2,}[\w-]+', r'\b(\-?\+?\d+)\b|\b0[Xx][a-fA-F\d]+\b|\b[a-fA-F\d]{4,}\b'],
-    #     'delimiter': [r''],
-    #     'theshold': 5
-    #     },
+    'Android': {
+        # 'log_file': 'Android/Android_2k.log',
+        'log_file': 'Android/Android.log',
+        'log_format': '<Date> <Time>  <Pid>  <Tid> <Level> <Component>: <Content>',
+        # 'regex': [r'(/[\w-]+)+', r'([\w-]+\.){2,}[\w-]+', r'\b(\-?\+?\d+)\b|\b0[Xx][a-fA-F\d]+\b|\b[a-fA-F\d]{4,}\b'],
+        'regex': [],
+        'delimiter': [r''],
+        'theshold': 5
+        },
     #
     # 'HealthApp': {
     #     'log_file': 'HealthApp/HealthApp_2k.log',
@@ -165,20 +169,4 @@ for dataset, setting in benchmark_settings.items():
     sentences = content.tolist()
     df_groundtruth=pd.read_csv('logs/' + dataset + '/' + dataset + '_2k.log_structured.csv',
                 encoding='UTF-8', header=0)
-    df_output,template_set= Brain.parse(sentences, setting['regex'], dataset, setting['theshold'], setting['delimiter'], starttime, efficiency=False, df_input=df_groundtruth.copy())
-
-    Brain.save_result(dataset, df_output, template_set)
-    f_measure, accuracy= evaluator.evaluate(df_groundtruth, df_output)
-    GA= evaluator.get_GA(df_groundtruth, df_output)
-    ED,ED_= evaluator.get_editdistance(df_groundtruth, df_output)
-    benchmark_result.append([dataset, GA, f_measure,ED])
-print('\n=== Overall evaluation results ===')
-pd.set_option('display.max_columns', None)
-pd.set_option('display.max_colwidth', None)
-df_result = pd.DataFrame(benchmark_result, columns=['Dataset',  'Group_accuracy', 'F1_score','Edit_distance'])
-df_result.set_index('Dataset', inplace=True)
-print(GREEN)
-print(df_result)
-print(RESET)
-print("Average Group_accuracy= "+YELLOW+str(sum(df_result['Group_accuracy'])/len(df_result['Group_accuracy']))+RESET+ \
-"   Average Edit_distance (without data clean) = "+YELLOW+str(sum(df_result['Edit_distance'])/len(df_result['Edit_distance']))+RESET)
+    Brain.analyze_dataset(dataset, sentences, setting['regex'], dataset, setting['theshold'], setting['delimiter'])
